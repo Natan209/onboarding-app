@@ -124,6 +124,9 @@ body {
 .col-step { font-size: 9px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 3px; }
 .col-title { font-size: 15px; font-weight: 500; color: var(--text-primary); }
 .col-body { flex: 1; overflow-y: auto; overflow-x: hidden; max-height: 380px; }
+.app-search-wrap { padding: 7px 10px; background: var(--bg-secondary); border-bottom: 0.5px solid var(--border-light); flex-shrink: 0; }
+.app-search { width: 100%; padding: 5px 9px; font-size: 12px; border: 1px solid var(--border-light); border-radius: 5px; background: var(--bg-primary); color: var(--text-primary); outline: none; direction: rtl; }
+.app-search:focus { border-color: #185FA5; box-shadow: 0 0 0 2px rgba(24,95,165,.15); }
 
 /* =====================
    ROWS
@@ -162,6 +165,58 @@ body {
 .lbl { font-size: 13px; color: var(--text-primary); line-height: 1.4; word-break: break-word; }
 .row.sel .lbl { color: var(--blue-dark); font-weight: 500; }
 .sublbl { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; line-height: 1.4; }
+
+.note-btn {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  cursor: pointer;
+  margin-top: 1px;
+  opacity: 0;
+  color: var(--text-tertiary);
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
+}
+.row:hover .note-btn { opacity: 1; }
+.note-btn:hover { background: var(--bg-info); color: var(--blue); }
+.note-btn.has-note { opacity: 1; color: var(--blue); font-size: 13px; }
+.note-btn.has-note:hover { background: var(--bg-info); }
+
+.note-tip {
+  position: fixed;
+  z-index: 9999;
+  background: #1a1a1a;
+  color: #fff;
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  max-width: 260px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.12s, transform 0.12s;
+  direction: rtl;
+  text-align: right;
+}
+.note-tip.show { opacity: 1; transform: translateY(0); }
+
+.ri-note {
+  font-size: 11px;
+  color: #185FA5;
+  margin-top: 3px;
+  padding: 3px 7px;
+  background: #e8f1fb;
+  border-radius: 4px;
+  line-height: 1.5;
+  display: inline-block;
+  max-width: 100%;
+}
 
 /* =====================
    CAPABILITY SECTION

@@ -1,4 +1,23 @@
 // =====================
+// TOOLTIP
+// =====================
+
+const _tip = (() => {
+  const el = document.createElement('div');
+  el.className = 'note-tip';
+  document.body.appendChild(el);
+  return {
+    show(e, text) { el.textContent = text; el.classList.add('show'); this.move(e); },
+    move(e) {
+      const x = e.clientX, y = e.clientY;
+      el.style.left = x + 'px';
+      el.style.top  = (y - el.offsetHeight - 10) + 'px';
+    },
+    hide() { el.classList.remove('show'); }
+  };
+})();
+
+// =====================
 // STATE
 // =====================
 
@@ -102,7 +121,7 @@ function rCat() {
       () => openEditItem(c),
       () => { if (!confirm('מחק ' + c.name + '?')) return; DB.cats = DB.cats.filter(x => x !== c); if (SEL.cat === c) SEL.cat = DB.cats[0] || null; render(); }
     );
-    r.onclick = () => { SEL.cat = c; c.sel = true; render(); };
+    r.onclick = () => { SEL.cat = c; c.sel = true; const s = document.getElementById('app-search'); if (s) s.value = ''; render(); };
     el.appendChild(r);
   });
 }
@@ -111,7 +130,10 @@ function rApp() {
   const el = document.getElementById('c-app');
   el.innerHTML = '';
   if (!SEL.cat) { el.innerHTML = '<div class="empty">בחר קטגוריה</div>'; return; }
-  SEL.cat.apps.forEach(a => {
+  const q = (document.getElementById('app-search')?.value || '').trim().toLowerCase();
+  const apps = SEL.cat.apps.filter(a => !q || a.name.toLowerCase().includes(q) || (a.desc || '').toLowerCase().includes(q));
+  if (!apps.length) { el.innerHTML = `<div class="empty">${q ? 'לא נמצאו תוצאות' : 'אין אפליקציות'}</div>`; return; }
+  apps.forEach(a => {
     const r = mk('div', 'row' + (a.sel ? ' sel' : ''));
     const ch = mk('div', 'chk'); ch.appendChild(chkSVG()); r.appendChild(ch);
     const b = mk('div', 'row-body');
@@ -123,6 +145,18 @@ function rApp() {
       () => { if (!confirm('מחק ' + a.name + '?')) return; SEL.cat.apps = SEL.cat.apps.filter(x => x !== a); render(); }
     );
     r.onclick = () => { a.sel = !a.sel; SEL.cat.sel = SEL.cat.apps.some(x => x.sel); if (a.sel) SEL.focusApp = a; render(); };
+
+    const nb = mk('div', 'note-btn' + (a.note ? ' has-note' : ''));
+    nb.title = '';
+    nb.textContent = a.note ? '✎' : '+';
+    if (a.note) {
+      nb.onmouseenter = e => { e.stopPropagation(); _tip.show(e, a.note); };
+      nb.onmousemove  = e => _tip.move(e);
+      nb.onmouseleave = () => _tip.hide();
+    }
+    nb.onclick = e => { e.stopPropagation(); _tip.hide(); openPopNote(a); };
+    r.appendChild(nb);
+
     el.appendChild(r);
   });
 }
@@ -186,7 +220,7 @@ function showReceipt() {
 
   html += secBlock('#185FA5', 'כל הנבחרים לניסוי', sv, ({ app: a }) => {
     const capsHTML = '<div class="ri-caps">' + (a.caps || []).map(c => `<span class="ri-cap ${c.s}">${c.n}</span>`).join('') + '</div>';
-    return `<div class="rec-item"><div class="ri-dot" style="background:${a.exists ? '#3B6D11' : '#BA7517'}"></div><div class="ri-body"><div class="ri-name">${a.name}</div>${a.desc ? `<div class="ri-sub">${a.desc}</div>` : ''}${capsHTML}</div></div>`;
+    return `<div class="rec-item"><div class="ri-dot" style="background:${a.exists ? '#3B6D11' : '#BA7517'}"></div><div class="ri-body"><div class="ri-name">${a.name}</div>${a.desc ? `<div class="ri-sub">${a.desc}</div>` : ''}${a.note ? `<div class="ri-note">✎ ${a.note}</div>` : ''}${capsHTML}</div></div>`;
   });
 
   html += secBlock('#3B6D11', 'אפליקציות קיימות', sv.filter(x => x.app.exists), ({ app: a, cat }) =>
@@ -422,6 +456,13 @@ function openEditItem(item) {
   showPop('עריכת שם', 'שמור', `<div class="pop-l">שם חדש</div><input class="pop-i" id="pop-i" type="text" value="${item.name}">`);
 }
 
+function openPopNote(app) {
+  _pop.type = 'note'; _pop.ctx = app;
+  showPop('הערה — ' + app.name, 'שמור',
+    `<textarea class="pop-i" id="pop-i" rows="4" placeholder="הוסף הערה לאפליקציה זו...">${app.note || ''}</textarea>`
+  );
+}
+
 function openPopAddCap(app, fromDev) {
   _pop.type = 'cap'; _pop.ctx = app; _pop.st = 'd'; _pop.fromDev = !!fromDev;
   const used = (app.caps || []).map(c => c.n);
@@ -490,6 +531,7 @@ function confirmPop() {
   const desc = descEl ? descEl.value.trim() : '';
   const { type: t, ctx: c } = _pop;
 
+  if (t === 'note' && c) { c.note = val || undefined; closePop(); render(); return; }
   if (t === 'edit' && c) { if (val) c.name = val; closePop(); render(); return; }
   if (!val) { closePop(); return; }
 
