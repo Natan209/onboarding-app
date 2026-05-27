@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Onboarding System — מעבדת הקרב</title>
+  <link rel="stylesheet" href="src/styles.css" />
+</head>
+<body dir="rtl">
+
+<div class="app" id="app">
+
+  <div class="topbar">
+    <span class="tl">ניסוי:</span><span class="tv">איום אווירי 2026-A</span>
+    <span class="tsep">|</span>
+    <span class="tl">מטרה:</span><span class="tv blue">גילוי ותקיפה</span>
+    <div class="tdots">
+      <div class="sdot" id="sd1"></div>
+      <div class="sdot" id="sd2"></div>
+      <div class="sdot" id="sd3"></div>
+    </div>
+  </div>
+
+  <div class="view-tabs">
+    <div class="vtab active" id="tab-pm" onclick="switchTab('pm')">לקוח / מנהל מוצר</div>
+    <div class="vtab" id="tab-dev" onclick="switchTab('dev')">פיתוח</div>
+  </div>
+
+  <!-- PM VIEW -->
+  <div id="pm-view">
+    <div id="pm-grid-wrap">
+      <div class="grid-wrap">
+        <div class="grid">
+          <div class="col">
+            <div class="col-head"><div class="col-step">שלב 1</div><div class="col-title">קטגוריה</div></div>
+            <div class="col-body" id="c-cat"></div>
+            <div class="add-row" onclick="openPop('cat')"><span class="plus">+</span> קטגוריה</div>
+          </div>
+          <div class="col">
+            <div class="col-head"><div class="col-step">שלב 2</div><div class="col-title">אפליקציה</div></div>
+            <div class="col-body" id="c-app"></div>
+            <div class="add-row" onclick="openPop('app')"><span class="plus">+</span> אפליקציה</div>
+          </div>
+          <div class="col">
+            <div class="col-head"><div class="col-step">שלב 3</div><div class="col-title">יכולות</div></div>
+            <div class="col-body" id="c-cap"></div>
+          </div>
+        </div>
+      </div>
+      <div class="bottom-bar">
+        <span class="sel-count" id="sel-count">0 אפליקציות נבחרו</span>
+        <button class="btn-pri" id="gen-receipt-btn" onclick="showReceipt()" disabled>צור קבלה ↗</button>
+      </div>
+    </div>
+
+    <div class="receipt" id="receipt"></div>
+
+    <div id="receipt-bar" style="display:none" class="bottom-bar">
+      <button class="btn-sec" onclick="backToSelection()">חזור לבחירה ←</button>
+      <button class="btn-pri" onclick="sendToDev()">שלח לפיתוח ↗</button>
+    </div>
+  </div>
+
+  <!-- DEV VIEW -->
+  <div id="dev-view" style="display:none">
+    <div class="dev-wrap">
+      <div class="dev-hd">
+        <div class="dev-hd-text">
+          <div class="dev-title">קבלת פיתוח — איום אווירי 2026-A</div>
+          <div class="dev-meta" id="dev-meta">ממתין לשליחה מהלקוח</div>
+        </div>
+        <span class="dev-stamp" id="dev-stamp">טיוטה</span>
+      </div>
+      <div class="dev-grid-wrap">
+        <div class="dev-grid" id="dev-grid" dir="rtl"></div>
+      </div>
+      <div class="dev-legend">
+        <div class="leg"><div class="leg-dot" style="background:#3B6D11"></div>קיים</div>
+        <div class="leg"><div class="leg-dot" style="background:#BA7517"></div>דורש התאמה</div>
+        <div class="leg"><div class="leg-dot" style="background:#A32D2D"></div>דורש פיתוח</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Right-click context menu -->
+<div class="ctxm" id="ctxm" dir="rtl">
+  <div class="ctxm-i" id="cm-edit">✎  שנה שם</div>
+  <div class="ctxm-sep"></div>
+  <div class="ctxm-i danger" id="cm-del">✕  מחק</div>
+</div>
+
+<!-- Popup -->
+<div class="ov h" id="ov">
+  <div class="popup">
+    <div class="pop-t" id="pop-title">הוסף</div>
+    <div id="pop-body"></div>
+    <div class="pop-acts">
+      <button class="pop-ok" onclick="confirmPop()">הוסף</button>
+      <button class="pop-cancel" onclick="closePop()">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<script src="src/data.js"></script>
+<script src="src/app.js"></script>
+</body>
+</html>
