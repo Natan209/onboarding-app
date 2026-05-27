@@ -75,9 +75,6 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') { hideCtx();
 
 function updateUI() {
   const n = getSelApps().length;
-  document.getElementById('sel-count').innerHTML =
-    n === 0 ? 'לא נבחרו אפליקציות'
-    : `<strong>${n}</strong> אפליקציה${n === 1 ? '' : 'ות'} נבחר${n === 1 ? 'ה' : 'ו'}`;
   document.getElementById('gen-receipt-btn').disabled = n === 0;
 
   const hasCat = DB.cats.some(c => c.sel);
