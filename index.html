@@ -10,10 +10,12 @@
 
 <div class="app" id="app">
 
-  <div class="topbar">
-    <span class="tl">ניסוי:</span><span class="tv">איום אווירי 2026-A</span>
-    <span class="tsep">|</span>
-    <span class="tl">מטרה:</span><span class="tv blue">גילוי ותקיפה</span>
+  <!-- TOPBAR -->
+  <div class="topbar" id="topbar">
+    <button class="tb-back" id="tb-back" onclick="backHome()" style="display:none">← ניסויים</button>
+    <span class="tl" id="tb-label">ניסוי:</span><span class="tv" id="tb-name">איום אווירי 2026-A</span>
+    <span class="tsep" id="tb-sep">|</span>
+    <span class="tl" id="tb-goal-label">מטרה:</span><span class="tv blue" id="tb-goal">גילוי ותקיפה</span>
     <div class="tdots">
       <div class="sdot" id="sd1"></div>
       <div class="sdot" id="sd2"></div>
@@ -21,13 +23,36 @@
     </div>
   </div>
 
-  <div class="view-tabs">
+  <!-- HOME VIEW -->
+  <div id="home-view" style="display:none">
+    <div class="home-wrap">
+      <div class="home-hero">
+        <div class="home-brand">
+          <div class="home-brand-icon">⚔</div>
+          <div>
+            <div class="home-title">מעבדת הקרב</div>
+            <div class="home-subtitle">מערכת ניהול ניסויים מבצעיים</div>
+          </div>
+        </div>
+        <button class="btn-new-trial" onclick="openPopNewTrial()">
+          <span class="btn-nt-plus">+</span> צור ניסוי חדש
+        </button>
+      </div>
+      <div class="home-list-hd">
+        <div class="home-list-title" id="trials-count-label">ניסויים</div>
+      </div>
+      <div class="trials-list" id="trials-list"></div>
+    </div>
+  </div>
+
+  <!-- TRIAL VIEW TABS -->
+  <div class="view-tabs" id="view-tabs" style="display:none">
     <div class="vtab active" id="tab-pm" onclick="switchTab('pm')">לקוח / מנהל מוצר</div>
     <div class="vtab" id="tab-dev" onclick="switchTab('dev')">פיתוח</div>
   </div>
 
   <!-- PM VIEW -->
-  <div id="pm-view">
+  <div id="pm-view" style="display:none">
     <div id="pm-grid-wrap">
       <div class="grid-wrap">
         <div class="grid">
@@ -66,7 +91,7 @@
     <div class="dev-wrap">
       <div class="dev-hd">
         <div class="dev-hd-text">
-          <div class="dev-title">קבלת פיתוח — איום אווירי 2026-A</div>
+          <div class="dev-title" id="dev-title">קבלת פיתוח</div>
           <div class="dev-meta" id="dev-meta">ממתין לשליחה מהלקוח</div>
         </div>
         <span class="dev-stamp" id="dev-stamp">טיוטה</span>

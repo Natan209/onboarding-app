@@ -21,7 +21,7 @@ const _tip = (() => {
 // STATE
 // =====================
 
-const SEL = { cat: DB.cats[0], focusApp: null };
+const SEL = { cat: null, focusApp: null };
 const DEV = { app: null, cap: null, sub: null };
 let devSent = false;
 
@@ -56,7 +56,7 @@ function bt(s) { return s === 'e' ? 'קיים' : s === 'a' ? 'התאמה' : 'פ�
 
 function getSelApps() {
   const res = [];
-  DB.cats.forEach(c => c.apps.forEach(a => { if (a.sel) res.push({ cat: c, app: a }); }));
+  currentTrial.db.cats.forEach(c => c.apps.forEach(a => { if (a.sel) res.push({ cat: c, app: a }); }));
   return res;
 }
 
@@ -96,7 +96,7 @@ function updateUI() {
   const n = getSelApps().length;
   document.getElementById('gen-receipt-btn').disabled = n === 0;
 
-  const hasCat = DB.cats.some(c => c.sel);
+  const hasCat = currentTrial.db.cats.some(c => c.sel);
   document.getElementById('sd1').style.background = hasCat ? '#639922' : '#185FA5';
   document.getElementById('sd2').style.background = n > 0 ? '#639922' : hasCat ? '#185FA5' : 'var(--border-light)';
   document.getElementById('sd3').style.background = n > 0 ? '#185FA5' : 'var(--border-light)';
@@ -109,7 +109,7 @@ function updateUI() {
 function rCat() {
   const el = document.getElementById('c-cat');
   el.innerHTML = '';
-  DB.cats.forEach(c => {
+  currentTrial.db.cats.forEach(c => {
     const wrap = mk('div', 'cat-card' + (c === SEL.cat ? ' sel' : ''));
     const r = mk('div', 'row' + (c === SEL.cat ? ' sel' : ''));
     const ch = mk('div', 'chk'); ch.appendChild(chkSVG()); r.appendChild(ch);
@@ -120,7 +120,7 @@ function rCat() {
     r.appendChild(b);
     r.oncontextmenu = e => showCtx(e,
       () => openEditItem(c),
-      () => { if (!confirm('מחק ' + c.name + '?')) return; DB.cats = DB.cats.filter(x => x !== c); if (SEL.cat === c) SEL.cat = DB.cats[0] || null; render(); }
+      () => { if (!confirm('מחק ' + c.name + '?')) return; currentTrial.db.cats = currentTrial.db.cats.filter(x => x !== c); if (SEL.cat === c) SEL.cat = currentTrial.db.cats[0] || null; render(); }
     );
     r.onclick = () => { SEL.cat = c; c.sel = true; const s = document.getElementById('app-search'); if (s) s.value = ''; render(); };
     wrap.appendChild(r);
@@ -231,7 +231,7 @@ function showReceipt() {
     return h + '</div>';
   };
 
-  let html = `<div class="rec-hd"><div class="rec-hd-text"><div class="rec-title">קבלת ניסוי — סיכום לקוח</div><div class="rec-meta">איום אווירי 2026-A · ${now}</div></div><span class="rec-stamp" style="background:#E6F1FB;color:#185FA5">ממתין לאישור</span></div><div class="rec-body">`;
+  let html = `<div class="rec-hd"><div class="rec-hd-text"><div class="rec-title">קבלת ניסוי — סיכום לקוח</div><div class="rec-meta">${currentTrial.name} · ${now}</div></div><span class="rec-stamp" style="background:#E6F1FB;color:#185FA5">ממתין לאישור</span></div><div class="rec-body">`;
 
   const recItem = (dotColor, badgeCls, badgeTxt, a, extraContent) => {
     // app-level meta row
@@ -290,7 +290,7 @@ function showReceipt() {
 }
 
 function updateCapStatus(appId, capIdx, newStatus) {
-  const allApps = DB.cats.flatMap(c => c.apps);
+  const allApps = currentTrial.db.cats.flatMap(c => c.apps);
   const app = allApps.find(a => a.id === appId);
   if (app && app.caps[capIdx]) {
     app.caps[capIdx].s = newStatus;
@@ -476,6 +476,7 @@ function showPop(title, okTxt, html) {
 
 function closePop() {
   document.getElementById('ov').classList.add('h');
+  document.querySelector('.popup').classList.remove('pop-lg');
   Object.assign(_pop, { type: null, ctx: null, st: 'd', fromDev: false });
 }
 
@@ -612,7 +613,18 @@ function confirmPop() {
   if (t === 'edit' && c) { if (val) c.name = val; closePop(); render(); return; }
   if (!val) { closePop(); return; }
 
-  if (t === 'cat') DB.cats.push({ id: uid(), name: val, icon: '📌', sel: false, apps: [] });
+  if (t === 'trial') {
+    const goalEl = document.getElementById('pop-goal');
+    const goal = goalEl ? goalEl.value.trim() : '';
+    const dateEl = document.getElementById('pop-date');
+    const trialDate = dateEl ? dateEl.value.trim() : new Date().toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const newTrial = { id: uid(), name: val, goal, date: trialDate, desc, db: makeEmptyDB() };
+    TRIALS.push(newTrial);
+    closePop();
+    openTrial(newTrial);
+    return;
+  }
+  if (t === 'cat') currentTrial.db.cats.push({ id: uid(), name: val, icon: '📌', sel: false, apps: [] });
   else if (t === 'app' && SEL.cat) SEL.cat.apps.push({ id: uid(), name: val, exists: false, sel: false, desc, requester, caps: [] });
   else if (t === 'cap' && c) {
     const capReq  = (document.getElementById('pop-cap-requester') || {}).value?.trim() || '';
@@ -630,6 +642,105 @@ function confirmPop() {
 document.getElementById('ov').onclick = e => { if (e.target === document.getElementById('ov')) closePop(); };
 
 // =====================
+// HOME / TRIAL NAVIGATION
+// =====================
+
+function setTopbarHome() {
+  document.getElementById('topbar').style.display = 'none';
+}
+
+function setTopbarTrial(trial) {
+  document.getElementById('topbar').style.display = '';
+  document.getElementById('tb-back').style.display = '';
+  document.getElementById('tb-label').textContent = 'ניסוי:';
+  document.getElementById('tb-name').textContent = trial.name;
+  document.getElementById('tb-sep').style.display = '';
+  document.getElementById('tb-goal-label').style.display = '';
+  document.getElementById('tb-goal').textContent = trial.goal;
+}
+
+function renderHome() {
+  setTopbarHome();
+  document.getElementById('home-view').style.display = '';
+  document.getElementById('view-tabs').style.display = 'none';
+  document.getElementById('pm-view').style.display = 'none';
+  document.getElementById('dev-view').style.display = 'none';
+  document.getElementById('receipt').classList.remove('show');
+  document.getElementById('receipt').innerHTML = '';
+  document.getElementById('receipt-bar').style.display = 'none';
+
+  const lbl = document.getElementById('trials-count-label');
+  if (lbl) lbl.textContent = TRIALS.length ? `${TRIALS.length} ניסוי${TRIALS.length !== 1 ? 'ם' : ''}` : 'ניסויים';
+
+  const list = document.getElementById('trials-list');
+  list.innerHTML = '';
+
+  if (!TRIALS.length) {
+    const empty = mk('div', 'home-empty');
+    empty.innerHTML = '<div class="home-empty-icon">🗂</div>'
+      + '<div class="home-empty-title">אין ניסויים עדיין</div>'
+      + '<div class="home-empty-sub">לחץ על "צור ניסוי חדש" כדי להתחיל</div>';
+    list.appendChild(empty);
+    return;
+  }
+
+  TRIALS.forEach(trial => {
+    const card = mk('div', 'trial-card');
+    card.onclick = () => openTrial(trial);
+
+    const inner = mk('div', 'tc-inner');
+
+    const top = mk('div', 'tc-top');
+    const name = mk('div', 'tc-name'); name.textContent = trial.name; top.appendChild(name);
+    const arrow = mk('div', 'tc-arrow'); arrow.textContent = '←'; top.appendChild(arrow);
+    inner.appendChild(top);
+
+    const meta = mk('div', 'tc-meta');
+    if (trial.goal) { const g = mk('span', 'tc-goal'); g.textContent = trial.goal; meta.appendChild(g); }
+    if (trial.date) { const d = mk('span', 'tc-date'); d.textContent = trial.date; meta.appendChild(d); }
+    inner.appendChild(meta);
+
+    if (trial.desc) { const ds = mk('div', 'tc-desc'); ds.textContent = trial.desc; inner.appendChild(ds); }
+
+    card.appendChild(inner);
+    list.appendChild(card);
+  });
+}
+
+function openTrial(trial) {
+  currentTrial = trial;
+  SEL.cat = trial.db.cats[0] || null;
+  SEL.focusApp = null;
+  devSent = false;
+  DEV.app = null; DEV.cap = null; DEV.sub = null;
+  setTopbarTrial(trial);
+  document.getElementById('home-view').style.display = 'none';
+  document.getElementById('view-tabs').style.display = '';
+  document.getElementById('pm-grid-wrap').style.display = '';
+  switchTab('pm');
+  render();
+}
+
+function backHome() {
+  renderHome();
+}
+
+function openPopNewTrial() {
+  _pop.type = 'trial';
+  document.querySelector('.popup').classList.add('pop-lg');
+  const today = new Date().toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const h = '<div class="pop-l">שם הניסוי</div>'
+    + '<input class="pop-i" id="pop-i" type="text" placeholder="למשל: איום אווירי 2026-B..." style="font-size:17px;font-weight:600">'
+    + '<div class="pop-row-2">'
+    +   '<div><div class="pop-l">מטרה</div><input class="pop-i" id="pop-goal" type="text" placeholder="למשל: גילוי ותקיפה..."></div>'
+    +   '<div><div class="pop-l">תאריך פתיחה</div><input class="pop-i" id="pop-date" type="text" value="' + today + '"></div>'
+    + '</div>'
+    + '<div class="pop-l">תיאור קצר</div>'
+    + '<textarea class="pop-i" id="pop-desc" rows="3" placeholder="תאר את מטרות הניסוי..."></textarea>';
+  showPop('ניסוי חדש', 'צור ניסוי', h);
+}
+
+// =====================
 // INIT
 // =====================
-render();
+renderHome();

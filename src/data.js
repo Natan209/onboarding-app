@@ -77,7 +77,11 @@ const PAR_CATALOG = {
 let _id = 100;
 function uid() { return ++_id; }
 
-const DB = {
+function makeEmptyDB() {
+  return { cats: [] };
+}
+
+let DB = {
   cats: [
     {
       id: uid(), name: 'אוויר', icon: '✈', sel: true,
@@ -153,3 +157,16 @@ const DB = {
     },
   ]
 };
+
+const TRIALS = [
+  {
+    id: uid(),
+    name: 'איום אווירי 2026-A',
+    goal: 'גילוי ותקיפה',
+    date: '01.01.2026',
+    desc: 'ניסוי מערכות לגילוי ותקיפה של איומים אוויריים',
+    db: DB
+  }
+];
+
+let currentTrial = TRIALS[0];
