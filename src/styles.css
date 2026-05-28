@@ -530,7 +530,7 @@ body {
   padding: 8px 13px;
   cursor: pointer;
   border-bottom: 0.5px solid var(--border-light);
-  flex-direction: row-reverse;
+  flex-direction: row;
   transition: background 0.1s;
 }
 .drow:last-child { border-bottom: none; }
@@ -699,7 +699,8 @@ textarea.pop-i { resize: vertical; min-height: 52px; }
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  flex-direction: row-reverse;
+  direction: rtl;
+  text-align: right;
 }
 .pop-li:last-child { border-bottom: none; }
 .pop-li:hover { background: var(--bg-info); color: var(--text-info); }
