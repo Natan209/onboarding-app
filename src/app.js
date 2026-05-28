@@ -110,6 +110,7 @@ function rCat() {
   const el = document.getElementById('c-cat');
   el.innerHTML = '';
   DB.cats.forEach(c => {
+    const wrap = mk('div', 'cat-card' + (c === SEL.cat ? ' sel' : ''));
     const r = mk('div', 'row' + (c === SEL.cat ? ' sel' : ''));
     const ch = mk('div', 'chk'); ch.appendChild(chkSVG()); r.appendChild(ch);
     const b = mk('div', 'row-body');
@@ -122,7 +123,8 @@ function rCat() {
       () => { if (!confirm('מחק ' + c.name + '?')) return; DB.cats = DB.cats.filter(x => x !== c); if (SEL.cat === c) SEL.cat = DB.cats[0] || null; render(); }
     );
     r.onclick = () => { SEL.cat = c; c.sel = true; const s = document.getElementById('app-search'); if (s) s.value = ''; render(); };
-    el.appendChild(r);
+    wrap.appendChild(r);
+    el.appendChild(wrap);
   });
 }
 
@@ -172,10 +174,12 @@ function rCap() {
     const isFocus = SEL.focusApp === a;
     const sh = mk('div', 'cap-sec-hd');
     const sn = mk('span', 'cap-sec-lbl'); sn.textContent = a.name; sh.appendChild(sn);
+    const btns = mk('div', 'cap-sec-btns');
     if (!isFocus) {
-      const sb = mk('span', 'mini-btn'); sb.textContent = 'הצג'; sb.onclick = () => { SEL.focusApp = a; rCap(); }; sh.appendChild(sb);
+      const sb = mk('span', 'mini-btn'); sb.textContent = 'הצג'; sb.onclick = () => { SEL.focusApp = a; rCap(); }; btns.appendChild(sb);
     }
-    const ab = mk('span', 'mini-btn'); ab.textContent = '+ יכולת'; ab.onclick = () => openPopAddCap(a, false); sh.appendChild(ab);
+    const ab = mk('span', 'mini-btn'); ab.textContent = '+ יכולת'; ab.onclick = () => openPopAddCap(a, false); btns.appendChild(ab);
+    sh.appendChild(btns);
     el.appendChild(sh);
 
     if (isFocus) {
@@ -248,7 +252,7 @@ function showReceipt() {
           if (c.requester) capMetaParts.push(`מבקש: ${c.requester}`);
           if (c.note)      capMetaParts.push(`הערה: ${c.note}`);
           const capMeta = capMetaParts.length ? `<div class="ri-cap-sub">${capMetaParts.join(' | ')}</div>` : '';
-          return `<div class="ri-cap-item"><div class="ri-cap-top">${dropdown}<span class="ri-cap-name">${c.n}</span></div>${capMeta}</div>`;
+          return `<div class="ri-cap-item"><div class="ri-cap-top"><span class="ri-cap-name">${c.n}</span>${dropdown}</div>${capMeta}</div>`;
         }).join('')
       : '';
 
@@ -261,7 +265,7 @@ function showReceipt() {
       `</div>`;
   };
 
-  html += secBlock('#185FA5', 'כל הנבחרים לניסוי', sv, ({ app: a }) =>
+  html += secBlock('#185FA5', 'אפליקציות לניסוי', sv, ({ app: a }) =>
     recItem(a.exists ? '#3B6D11' : '#BA7517', a.exists ? 'ri-be' : 'ri-bn', a.exists ? 'קיים' : 'חדש', a, '')
   );
 
@@ -519,10 +523,12 @@ function openPopNote(app) {
 function openPopAddCap(app, fromDev) {
   _pop.type = 'cap'; _pop.ctx = app; _pop.st = 'd'; _pop.fromDev = !!fromDev;
   const used = (app.caps || []).map(c => c.n);
-  let list = '<div class="pop-l">בחר מהקטלוג <span style="color:var(--amber);font-size:11px">(סטטוס: התאמה)</span></div><div class="pop-list">';
+  let list = '<div class="pop-l">בחר מהקטלוג <span style="color:var(--amber);font-size:11px">(סטטוס: התאמה)</span></div>'
+    + '<input class="pop-search" id="cap-search" type="text" placeholder="חיפוש יכולת...">'
+    + '<div class="pop-list" id="cap-list">';
   CAP_CATALOG.forEach(n => {
     const u = used.includes(n);
-    list += `<div class="pop-li${u ? ' used' : ''}" onclick="quickAddCap('${n}')">${u ? '✓ ' : ''}${n}</div>`;
+    list += `<div class="pop-li${u ? ' used' : ''}" data-name="${n}" onclick="quickAddCap('${n}')">${u ? '✓ ' : ''}${n}</div>`;
   });
   list += '</div>'
     + '<div class="pop-sep">או יכולת חדשה <span style="color:var(--red);font-size:11px">(סטטוס: פיתוח)</span></div>'
@@ -530,6 +536,19 @@ function openPopAddCap(app, fromDev) {
     + '<div class="pop-l">שם המבקש (אופציונלי)</div><input class="pop-i" id="pop-cap-requester" type="text" placeholder="למשל: דן כהן...">'
     + '<div class="pop-l">הערה/תיאור (אופציונלי)</div><textarea class="pop-i" id="pop-cap-desc" placeholder="תיאור קצר של היכולת..."></textarea>';
   showPop('הוסף יכולת', 'הוסף', list);
+  setTimeout(() => {
+    const s = document.getElementById('cap-search');
+    if (s) { s.focus(); s.oninput = () => filterCapList(s.value); }
+  }, 60);
+}
+
+function filterCapList(q) {
+  const list = document.getElementById('cap-list');
+  if (!list) return;
+  q = q.toLowerCase();
+  list.querySelectorAll('.pop-li').forEach(item => {
+    item.style.display = (item.getAttribute('data-name') || '').toLowerCase().includes(q) ? '' : 'none';
+  });
 }
 
 function quickAddCap(n) {

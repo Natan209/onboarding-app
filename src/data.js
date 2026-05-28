@@ -147,5 +147,9 @@ const DB = {
         },
       ]
     },
+    {
+      id: uid(), name: 'מעטפת', icon: '💻', sel: false,
+      apps: []
+    },
   ]
 };
