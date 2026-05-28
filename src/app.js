@@ -647,9 +647,13 @@ document.getElementById('ov').onclick = e => { if (e.target === document.getElem
 
 function setTopbarHome() {
   document.getElementById('topbar').style.display = 'none';
+  document.getElementById('app').classList.add('home-mode');
+  document.body.classList.add('home-mode');
 }
 
 function setTopbarTrial(trial) {
+  document.getElementById('app').classList.remove('home-mode');
+  document.body.classList.remove('home-mode');
   document.getElementById('topbar').style.display = '';
   document.getElementById('tb-back').style.display = '';
   document.getElementById('tb-label').textContent = 'ניסוי:';
