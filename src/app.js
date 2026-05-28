@@ -186,6 +186,17 @@ function rCap() {
           const ci = mk('div', 'cap-row');
           const cl = mk('span', 'cap-lbl'); cl.textContent = cap.n; ci.appendChild(cl);
           ci.oncontextmenu = e => showCtx(e, null, () => { a.caps = a.caps.filter(x => x !== cap); rCap(); });
+
+          const nb = mk('div', 'note-btn' + (cap.note ? ' has-note' : ''));
+          nb.textContent = cap.note ? '✎' : '+';
+          if (cap.note) {
+            nb.onmouseenter = e => { e.stopPropagation(); _tip.show(e, cap.note); };
+            nb.onmousemove  = e => _tip.move(e);
+            nb.onmouseleave = () => _tip.hide();
+          }
+          nb.onclick = e => { e.stopPropagation(); _tip.hide(); openPopNote(cap); };
+          ci.appendChild(nb);
+
           el.appendChild(ci);
         });
       }
@@ -218,29 +229,70 @@ function showReceipt() {
 
   let html = `<div class="rec-hd"><div class="rec-hd-text"><div class="rec-title">קבלת ניסוי — סיכום לקוח</div><div class="rec-meta">איום אווירי 2026-A · ${now}</div></div><span class="rec-stamp" style="background:#E6F1FB;color:#185FA5">ממתין לאישור</span></div><div class="rec-body">`;
 
-  html += secBlock('#185FA5', 'כל הנבחרים לניסוי', sv, ({ app: a }) => {
-    const capsHTML = '<div class="ri-caps">' + (a.caps || []).map(c => `<span class="ri-cap ${c.s}">${c.n}</span>`).join('') + '</div>';
-    return `<div class="rec-item"><div class="ri-dot" style="background:${a.exists ? '#3B6D11' : '#BA7517'}"></div><div class="ri-body"><div class="ri-name">${a.name}</div>${a.desc ? `<div class="ri-sub">${a.desc}</div>` : ''}${a.note ? `<div class="ri-note">✎ ${a.note}</div>` : ''}${capsHTML}</div></div>`;
-  });
+  const recItem = (dotColor, badgeCls, badgeTxt, a, extraContent) => {
+    // app-level meta row
+    const appMeta = (() => {
+      const parts = [];
+      if (a.requester) parts.push(`מבקש: ${a.requester}`);
+      if (a.note)      parts.push(`הערה: ${a.note}`);
+      return parts.length ? `<div class="ri-app-meta">${parts.join(' | ')}</div>` : '';
+    })();
+
+    // capabilities
+    const capsHTML = (a.caps || []).length
+      ? (a.caps || []).map((c, ci) => {
+          const capId = `cap-st-${a.id}-${ci}`;
+          const sel = (s) => s === c.s ? ' selected' : '';
+          const dropdown = `<select class="ri-cap-sel ${c.s}" id="${capId}" onchange="updateCapStatus('${a.id}',${ci},this.value)"><option value="e"${sel('e')}>קיים</option><option value="a"${sel('a')}>התאמה</option><option value="d"${sel('d')}>פיתוח</option></select>`;
+          const capMetaParts = [];
+          if (c.requester) capMetaParts.push(`מבקש: ${c.requester}`);
+          if (c.note)      capMetaParts.push(`הערה: ${c.note}`);
+          const capMeta = capMetaParts.length ? `<div class="ri-cap-sub">${capMetaParts.join(' | ')}</div>` : '';
+          return `<div class="ri-cap-item"><div class="ri-cap-top">${dropdown}<span class="ri-cap-name">${c.n}</span></div>${capMeta}</div>`;
+        }).join('')
+      : '';
+
+    return `<div class="rec-item">` +
+      `<div class="ri-header"><div class="ri-dot" style="background:${dotColor}"></div><div class="ri-name">${a.name}</div><span class="ri-badge ${badgeCls}">${badgeTxt}</span></div>` +
+      `${a.desc ? `<div class="ri-sub">${a.desc}</div>` : ''}` +
+      `${appMeta}` +
+      `${extraContent || ''}` +
+      `${capsHTML ? `<div class="ri-caps-grid">${capsHTML}</div>` : ''}` +
+      `</div>`;
+  };
+
+  html += secBlock('#185FA5', 'כל הנבחרים לניסוי', sv, ({ app: a }) =>
+    recItem(a.exists ? '#3B6D11' : '#BA7517', a.exists ? 'ri-be' : 'ri-bn', a.exists ? 'קיים' : 'חדש', a, '')
+  );
 
   html += secBlock('#3B6D11', 'אפליקציות קיימות', sv.filter(x => x.app.exists), ({ app: a, cat }) =>
-    `<div class="rec-item"><div class="ri-dot" style="background:#3B6D11"></div><div class="ri-body"><div class="ri-name">${a.name}</div><div class="ri-sub">${cat.name} — קיים במערכת</div></div></div>`
+    recItem('#3B6D11', 'ri-be', 'קיים', a, `<div class="ri-sub">${cat.name} — קיים במערכת</div>`)
   );
 
   const missing = sv.filter(x => !x.app.exists);
   if (missing.length) {
     html += secBlock('#BA7517', 'אפליקציות חדשות — דורש פיתוח', missing, ({ app: a }) => {
-      const devCaps  = (a.caps || []).filter(c => c.s === 'd').map(c => c.n);
+      const devCaps   = (a.caps || []).filter(c => c.s === 'd').map(c => c.n);
       const adaptCaps = (a.caps || []).filter(c => c.s === 'a').map(c => c.n);
       let sub = '';
       if (devCaps.length)   sub += 'פיתוח: ' + devCaps.join(', ') + '. ';
       if (adaptCaps.length) sub += 'התאמה: ' + adaptCaps.join(', ') + '.';
-      return `<div class="rec-item"><div class="ri-dot" style="background:#BA7517"></div><div class="ri-body"><div class="ri-name">${a.name}</div>${a.desc ? `<div class="ri-sub">${a.desc}</div>` : ''}${sub ? `<div class="ri-sub">${sub}</div>` : ''}</div></div>`;
+      return recItem('#BA7517', 'ri-bn', 'חדש', a, sub ? `<div class="ri-sub">${sub}</div>` : '');
     });
   }
 
   html += '</div><div class="rec-legend"><div class="leg"><div class="leg-dot" style="background:#3B6D11"></div>קיים</div><div class="leg"><div class="leg-dot" style="background:#BA7517"></div>התאמה</div><div class="leg"><div class="leg-dot" style="background:#A32D2D"></div>פיתוח</div></div>';
   rec.innerHTML = html;
+}
+
+function updateCapStatus(appId, capIdx, newStatus) {
+  const allApps = DB.cats.flatMap(c => c.apps);
+  const app = allApps.find(a => a.id === appId);
+  if (app && app.caps[capIdx]) {
+    app.caps[capIdx].s = newStatus;
+    const sel = document.getElementById(`cap-st-${appId}-${capIdx}`);
+    if (sel) sel.className = `ri-cap-sel ${newStatus}`;
+  }
 }
 
 function backToSelection() {
@@ -445,7 +497,8 @@ function openPop(t) {
   if (t === 'cat') { showPop('קטגוריה חדשה', 'הוסף', '<div class="pop-l">שם</div><input class="pop-i" id="pop-i" type="text" placeholder="למשל: ימי, סייבר...">'); return; }
   if (t === 'app') {
     const h = '<div class="pop-l">שם האפליקציה</div><input class="pop-i" id="pop-i" type="text" placeholder="למשל: רחפן מתאבד...">'
-      + '<div class="pop-l">תיאור קצר (אופציונלי)</div><textarea class="pop-i" id="pop-desc" placeholder="מה האפליקציה הזו אמורה לעשות?"></textarea>';
+      + '<div class="pop-l">תיאור קצר (אופציונלי)</div><textarea class="pop-i" id="pop-desc" placeholder="מה האפליקציה הזו אמורה לעשות?"></textarea>'
+      + '<div class="pop-l">שם המבקש (יופיע בקבלה בלבד)</div><input class="pop-i" id="pop-requester" type="text" placeholder="למשל: דן כהן, מחלקת מבצעים...">';
     showPop('אפליקציה חדשה', 'הוסף', h);
     return;
   }
@@ -466,20 +519,23 @@ function openPopNote(app) {
 function openPopAddCap(app, fromDev) {
   _pop.type = 'cap'; _pop.ctx = app; _pop.st = 'd'; _pop.fromDev = !!fromDev;
   const used = (app.caps || []).map(c => c.n);
-  let list = '<div class="pop-l">בחר מהקטלוג</div><div class="pop-list">';
+  let list = '<div class="pop-l">בחר מהקטלוג <span style="color:var(--amber);font-size:11px">(סטטוס: התאמה)</span></div><div class="pop-list">';
   CAP_CATALOG.forEach(n => {
     const u = used.includes(n);
     list += `<div class="pop-li${u ? ' used' : ''}" onclick="quickAddCap('${n}')">${u ? '✓ ' : ''}${n}</div>`;
   });
-  list += '</div><div class="pop-sep">או חדש</div><div class="pop-l">שם יכולת</div><input class="pop-i" id="pop-i" type="text" placeholder="שם...">';
-  if (fromDev) list += statHTML('d');
+  list += '</div>'
+    + '<div class="pop-sep">או יכולת חדשה <span style="color:var(--red);font-size:11px">(סטטוס: פיתוח)</span></div>'
+    + '<div class="pop-l">שם יכולת</div><input class="pop-i" id="pop-i" type="text" placeholder="שם...">'
+    + '<div class="pop-l">שם המבקש (אופציונלי)</div><input class="pop-i" id="pop-cap-requester" type="text" placeholder="למשל: דן כהן...">'
+    + '<div class="pop-l">הערה/תיאור (אופציונלי)</div><textarea class="pop-i" id="pop-cap-desc" placeholder="תיאור קצר של היכולת..."></textarea>';
   showPop('הוסף יכולת', 'הוסף', list);
 }
 
 function quickAddCap(n) {
   const app = _pop.ctx; if (!app) return;
   if (!app.caps) app.caps = [];
-  if (!app.caps.find(c => c.n === n)) app.caps.push({ id: uid(), n, s: 'd', subs: [] });
+  if (!app.caps.find(c => c.n === n)) app.caps.push({ id: uid(), n, s: 'a', subs: [] });
   const fd = _pop.fromDev;
   closePop();
   if (fd) buildDevView(); else render();
@@ -529,6 +585,8 @@ function confirmPop() {
   const val = inp ? inp.value.trim() : '';
   const descEl = document.getElementById('pop-desc');
   const desc = descEl ? descEl.value.trim() : '';
+  const requesterEl = document.getElementById('pop-requester');
+  const requester = requesterEl ? requesterEl.value.trim() : '';
   const { type: t, ctx: c } = _pop;
 
   if (t === 'note' && c) { c.note = val || undefined; closePop(); render(); return; }
@@ -536,8 +594,13 @@ function confirmPop() {
   if (!val) { closePop(); return; }
 
   if (t === 'cat') DB.cats.push({ id: uid(), name: val, icon: '📌', sel: false, apps: [] });
-  else if (t === 'app' && SEL.cat) SEL.cat.apps.push({ id: uid(), name: val, exists: false, sel: false, desc, caps: [] });
-  else if (t === 'cap' && c) { if (!c.caps) c.caps = []; if (!c.caps.find(x => x.n === val)) c.caps.push({ id: uid(), n: val, s: 'd', subs: [] }); }
+  else if (t === 'app' && SEL.cat) SEL.cat.apps.push({ id: uid(), name: val, exists: false, sel: false, desc, requester, caps: [] });
+  else if (t === 'cap' && c) {
+    const capReq  = (document.getElementById('pop-cap-requester') || {}).value?.trim() || '';
+    const capDesc = (document.getElementById('pop-cap-desc')      || {}).value?.trim() || '';
+    if (!c.caps) c.caps = [];
+    if (!c.caps.find(x => x.n === val)) c.caps.push({ id: uid(), n: val, s: 'd', requester: capReq || undefined, desc: capDesc || undefined, subs: [] });
+  }
   else if (t === 'sub' && c) { if (!c.subs) c.subs = []; if (!c.subs.find(x => x.n === val)) c.subs.push({ id: uid(), n: val, s: _pop.st || 'd', params: [] }); }
   else if (t === 'param' && c) { if (!c.params) c.params = []; c.params.push({ n: val, val: '' }); }
 
