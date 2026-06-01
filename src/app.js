@@ -231,7 +231,8 @@ function showReceipt() {
     return h + '</div>';
   };
 
-  let html = `<div class="rec-hd"><div class="rec-hd-text"><div class="rec-title">קבלת ניסוי — סיכום לקוח</div><div class="rec-meta">${currentTrial.name} · ${now}</div></div><span class="rec-stamp" style="background:#E6F1FB;color:#185FA5">ממתין לאישור</span></div><div class="rec-body">`;
+  const legend = `<div class="rec-legend"><div class="leg"><div class="leg-dot" style="background:#3B6D11"></div>קיים</div><div class="leg"><div class="leg-dot" style="background:#BA7517"></div>התאמה</div><div class="leg"><div class="leg-dot" style="background:#A32D2D"></div>פיתוח</div></div>`;
+  let html = `<div class="rec-hd"><div class="rec-hd-text"><div class="rec-title">קבלת ניסוי — סיכום לקוח</div><div class="rec-meta">${currentTrial.name} · ${now}</div></div><span class="rec-stamp" style="background:#E6F1FB;color:#185FA5">ממתין לאישור</span></div>${legend}<div class="rec-body">`;
 
   const recItem = (dotColor, badgeCls, badgeTxt, a, extraContent) => {
     // app-level meta row
@@ -276,16 +277,11 @@ function showReceipt() {
   const missing = sv.filter(x => !x.app.exists);
   if (missing.length) {
     html += secBlock('#BA7517', 'אפליקציות חדשות — דורש פיתוח', missing, ({ app: a }) => {
-      const devCaps   = (a.caps || []).filter(c => c.s === 'd').map(c => c.n);
-      const adaptCaps = (a.caps || []).filter(c => c.s === 'a').map(c => c.n);
-      let sub = '';
-      if (devCaps.length)   sub += 'פיתוח: ' + devCaps.join(', ') + '. ';
-      if (adaptCaps.length) sub += 'התאמה: ' + adaptCaps.join(', ') + '.';
-      return recItem('#BA7517', 'ri-bn', 'חדש', a, sub ? `<div class="ri-sub">${sub}</div>` : '');
+      return recItem('#BA7517', 'ri-bn', 'חדש', a, '');
     });
   }
 
-  html += '</div><div class="rec-legend"><div class="leg"><div class="leg-dot" style="background:#3B6D11"></div>קיים</div><div class="leg"><div class="leg-dot" style="background:#BA7517"></div>התאמה</div><div class="leg"><div class="leg-dot" style="background:#A32D2D"></div>פיתוח</div></div>';
+  html += '</div>';
   rec.innerHTML = html;
 }
 
@@ -534,7 +530,6 @@ function openPopAddCap(app, fromDev) {
   list += '</div>'
     + '<div class="pop-sep">או יכולת חדשה <span style="color:var(--red);font-size:11px">(סטטוס: פיתוח)</span></div>'
     + '<div class="pop-l">שם יכולת</div><input class="pop-i" id="pop-i" type="text" placeholder="שם...">'
-    + '<div class="pop-l">שם המבקש (אופציונלי)</div><input class="pop-i" id="pop-cap-requester" type="text" placeholder="למשל: דן כהן...">'
     + '<div class="pop-l">הערה/תיאור (אופציונלי)</div><textarea class="pop-i" id="pop-cap-desc" placeholder="תיאור קצר של היכולת..."></textarea>';
   showPop('הוסף יכולת', 'הוסף', list);
   setTimeout(() => {

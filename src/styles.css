@@ -454,9 +454,8 @@ body.home-mode { background: #f7f3ec; }
   flex-shrink: 0;
   appearance: none;
   -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23888'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: left 7px center;
+  background-image: none;
+  padding: 2px 8px;
 }
 .ri-cap-sel.e { background-color: var(--green-bg); color: var(--green); }
 .ri-cap-sel.a { background-color: var(--amber-bg); color: var(--amber); }
