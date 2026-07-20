@@ -886,6 +886,9 @@ textarea.pop-i { resize: vertical; min-height: 52px; }
 .home-list-hd {
   margin-bottom: 14px;
   padding: 0 2px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 .home-list-title {
   font-size: 11.5px;
@@ -893,6 +896,52 @@ textarea.pop-i { resize: vertical; min-height: 52px; }
   color: rgba(0,0,0,0.35);
   text-transform: uppercase;
   letter-spacing: 0.12em;
+}
+.btn-clone-trial {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 13px;
+  background: transparent;
+  border: 1.5px solid rgba(0,0,0,0.15);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(0,0,0,0.45);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-clone-trial:hover {
+  border-color: var(--blue);
+  color: var(--blue);
+  background: rgba(37,99,235,0.05);
+}
+
+/* Clone popup — trial list */
+.clone-trial-row {
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.12s;
+  border: 1.5px solid transparent;
+}
+.clone-trial-row:hover { background: rgba(0,0,0,0.04); }
+.clone-trial-row.selected {
+  background: rgba(37,99,235,0.07);
+  border-color: var(--blue);
+}
+.clone-trial-name { font-size: 14px; font-weight: 600; color: var(--text); }
+.clone-trial-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.clone-empty { padding: 16px; text-align: center; color: var(--text-muted); font-size: 13px; }
+
+/* Step 2 source label */
+.pop-clone-src {
+  font-size: 12px;
+  color: var(--text-muted);
+  background: rgba(0,0,0,0.04);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 4px;
 }
 
 /* Cards grid */
