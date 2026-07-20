@@ -606,6 +606,38 @@ function confirmPop() {
 
   if (t === 'note' && c) { c.note = val || undefined; closePop(); render(); return; }
   if (t === 'edit' && c) { if (val) c.name = val; closePop(); render(); return; }
+
+  if (t === 'clone-source') {
+    if (!c) return;
+    closePop();
+    openCloneDetails(c);
+    return;
+  }
+
+  if (t === 'clone-details' && c) {
+    if (!val) return;
+    const goalEl = document.getElementById('pop-goal');
+    const goal = goalEl ? goalEl.value.trim() : '';
+    const dateEl = document.getElementById('pop-date');
+    const trialDate = dateEl ? dateEl.value.trim() : new Date().toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const clonedDB = JSON.parse(JSON.stringify(c.db));
+    clonedDB.cats.forEach(cat => {
+      cat.id = uid();
+      cat.apps.forEach(app => {
+        app.id = uid();
+        (app.caps || []).forEach(cap => {
+          cap.id = uid();
+          (cap.subs || []).forEach(sub => { sub.id = uid(); });
+        });
+      });
+    });
+    const newTrial = { id: uid(), name: val, goal, date: trialDate, desc, db: clonedDB };
+    TRIALS.push(newTrial);
+    closePop();
+    openTrial(newTrial);
+    return;
+  }
+
   if (!val) { closePop(); return; }
 
   if (t === 'trial') {
@@ -670,6 +702,8 @@ function renderHome() {
 
   const lbl = document.getElementById('trials-count-label');
   if (lbl) lbl.textContent = TRIALS.length ? `${TRIALS.length} ניסוי${TRIALS.length !== 1 ? 'ם' : ''}` : 'ניסויים';
+  const cloneBtn = document.getElementById('btn-clone-trial');
+  if (cloneBtn) cloneBtn.style.display = TRIALS.length ? '' : 'none';
 
   const list = document.getElementById('trials-list');
   list.innerHTML = '';
@@ -722,6 +756,72 @@ function openTrial(trial) {
 
 function backHome() {
   renderHome();
+}
+
+function openPopDuplicateTrial() {
+  if (!TRIALS.length) return;
+  _pop.type = 'clone-source';
+  _pop.ctx = null;
+  document.querySelector('.popup').classList.add('pop-lg');
+
+  const rowsHTML = (filter) => {
+    const list = filter
+      ? TRIALS.filter(t => t.name.includes(filter) || t.goal.includes(filter))
+      : TRIALS;
+    if (!list.length) return '<div class="clone-empty">לא נמצאו ניסויים</div>';
+    return list.map(t =>
+      `<div class="clone-trial-row" onclick="selectCloneSource(${t.id})" data-id="${t.id}">
+        <div class="clone-trial-name">${t.name}</div>
+        <div class="clone-trial-meta">${t.goal} · ${t.date}</div>
+      </div>`
+    ).join('');
+  };
+
+  const h = '<div class="pop-l">חיפוש לפי שם ניסוי</div>'
+    + '<input class="pop-search" id="clone-search" type="text" placeholder="חפש ניסוי..." oninput="filterCloneList(this.value)">'
+    + '<div class="pop-list" id="clone-list">' + rowsHTML('') + '</div>';
+
+  showPop('שכפל ניסוי קיים', 'המשך', h);
+  document.querySelector('.pop-ok').disabled = true;
+  setTimeout(() => { const s = document.getElementById('clone-search'); if (s) s.focus(); }, 60);
+}
+
+function filterCloneList(val) {
+  const list = val
+    ? TRIALS.filter(t => t.name.includes(val) || t.goal.includes(val))
+    : TRIALS;
+  document.getElementById('clone-list').innerHTML = list.length
+    ? list.map(t =>
+        `<div class="clone-trial-row${_pop.ctx && _pop.ctx.id === t.id ? ' selected' : ''}" onclick="selectCloneSource(${t.id})" data-id="${t.id}">
+          <div class="clone-trial-name">${t.name}</div>
+          <div class="clone-trial-meta">${t.goal} · ${t.date}</div>
+        </div>`
+      ).join('')
+    : '<div class="clone-empty">לא נמצאו ניסויים</div>';
+}
+
+function selectCloneSource(id) {
+  _pop.ctx = TRIALS.find(t => t.id === id) || null;
+  document.querySelectorAll('.clone-trial-row').forEach(r => r.classList.remove('selected'));
+  document.querySelector(`.clone-trial-row[data-id="${id}"]`)?.classList.add('selected');
+  document.querySelector('.pop-ok').disabled = !_pop.ctx;
+}
+
+function openCloneDetails(source) {
+  _pop.type = 'clone-details';
+  _pop.ctx = source;
+  document.querySelector('.popup').classList.add('pop-lg');
+  const today = new Date().toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const h = `<div class="pop-clone-src">מבוסס על: <strong>${source.name}</strong></div>`
+    + '<div class="pop-l">שם ניסוי חדש</div>'
+    + '<input class="pop-i" id="pop-i" type="text" placeholder="שם..." style="font-size:17px;font-weight:600">'
+    + '<div class="pop-row-2">'
+    +   `<div><div class="pop-l">מטרה</div><input class="pop-i" id="pop-goal" type="text" value="${source.goal}"></div>`
+    +   `<div><div class="pop-l">תאריך פתיחה</div><input class="pop-i" id="pop-date" type="text" value="${today}"></div>`
+    + '</div>'
+    + '<div class="pop-l">תיאור קצר</div>'
+    + `<textarea class="pop-i" id="pop-desc" rows="3" placeholder="תאר את מטרות הניסוי...">${source.desc || ''}</textarea>`;
+  showPop('שכפול ניסוי קיים', 'שכפל', h);
 }
 
 function openPopNewTrial() {
